@@ -2,11 +2,23 @@ import * as SQLite from 'expo-sqlite';
 
 let db = SQLite.openDatabase('mydatabase.db');
 
-const openDatabaseConnection = () => {
-    if (!db || !db._db) {
-      db = SQLite.openDatabase('mydatabase.db');
+
+db.transaction((tx) => {
+  tx.executeSql(
+    'SELECT name FROM sqlite_master WHERE type="table" AND name="category_list"',
+    [],
+    (_, result) => {
+      if (result.rows.length === 0) {
+        // Category list table does not exist, call initDB function
+        initDatabase();
+      }
+    },
+    (_, error) => {
+      // Handle error if necessary
+      console.error('Error checking table existence:', error);
     }
-  };
+  );
+});
 
   const initDatabase = () => {
     db.transaction(
