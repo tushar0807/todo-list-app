@@ -1,8 +1,8 @@
 // ItemList.js
 import React, { useState , useEffect} from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Button , ScrollView } from 'react-native';
+import { Image , View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Button , ScrollView , TouchableWithoutFeedback} from 'react-native';
 
-import { addTodo, getTodosByCategoryId } from './Database';
+import { addTodo, deleteTodo, getTodosByCategoryId, toggleTodoDoneStatus, updateTodoTitle } from './Database';
 
 
 
@@ -11,10 +11,10 @@ const ItemList = ({ route }) => {
 
   const [todos, setTodos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editModal, setEditModal] = useState(false);
   const [newTodo , setNewTodo] = useState({})
-
-  let db = 
-
+  const [editText , setEditText] = useState("")
+  const [editTodoTid , setEditTodoTid] = useState(null)
   useEffect(() => {
     const fetchTodos = async () => {
       try {
@@ -31,29 +31,110 @@ const ItemList = ({ route }) => {
 
   const addTodoHandler = async() => {
     try {
-        const resp = await addTodo(category.Cid , newTodo.Title , newTodo.Description).then((r)=>{
+         await addTodo(category.Cid , newTodo.Title , newTodo.Description).then((r)=>{
             setModalVisible(false);
-            setTodos([...todos , newTodo])
+            setTodos([...todos , r])
             setNewTodo({})
         })
         
     } catch (error) {
         console.error('Error Adding todo:', error);
-    }
-    
-    
+    }    
   };
+
+  const onCheckboxPress = async(tid) =>{
+    await toggleTodoDoneStatus(tid).then((r)=>{
+
+        setTodos((prevTodos) => {
+            const todoCopy = [...prevTodos];
+            const todoIndex = todoCopy.findIndex((todo) => todo.Tid === tid);
+            todoCopy[todoIndex].Done = todoCopy[todoIndex].Done ? 0 : 1;
+
+            return todoCopy;
+          });
+    })
+  }
+
+  const handleDeleteTodo = async(tid)=>{
+    console.log(tid)
+    await deleteTodo(tid).then((r)=>{
+        setTodos((prevTodos) => {
+            const updatedTodos = prevTodos.filter((todo) => todo.Tid !== tid);
+            return updatedTodos;
+          });          
+
+    })
+  }
+
+  const editTodoHandler = async(tid) => {
+      await updateTodoTitle(tid,editText).then((r)=>{
+        setTodos((prevTodo) => {
+          const todoCopy = [...prevTodo];
+          const todoIndex = todoCopy.findIndex((todo) => todo.Tid === tid);
+          todoCopy[todoIndex].Title = editText;
+
+          return todoCopy
+        });
+
+        setEditModal(false)
+        setEditText("")
+        setEditTodoTid(null)
+      })
+
+
+  }
 
   return (
     <View style={styles.container}>
       <ScrollView>
-        {todos?.map((todo , index) => (
-          <View key={String(index)} style={styles.todoContainer}>
-            <Text style={styles.title}>{todo.Title}</Text>
-            <Text style={styles.description}>{todo.Description}</Text>
+      {todos && todos.length > 0 ? todos.map((todo, index) => (
+        <View key={String(todo.Tid)} style={[styles.todoContainer , !todo.Done && styles.DoneBG]}>
+          <View style={styles.checkboxContainer}>
+      
+            <TouchableWithoutFeedback onPress={() => onCheckboxPress(todo.Tid)}>
+              <View>
+              <Text style={[styles.checkboxText, todo.Done ? styles.todoDoneContainer : styles.todoNotDoneContainer]}>
+                  {todo.Done ? '👍' : '👎'}
+              </Text>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        ))}
-      </ScrollView>
+
+          <View style={styles.todoDetailsContainer}>
+              <View style={styles.Textcontainer}>
+                  <Text style={styles.title}>{todo.Title}</Text>
+                  <View style={styles.TextbuttonsContainer}>
+                      <TouchableOpacity style={styles.Textbutton}  >
+                          <Text style={styles.TextbuttonText} onPress={() => {
+                            setEditText((prevText) => {
+                              const todoCopy = [...todos];
+                              const todoIndex = todoCopy.findIndex((todoItem) => todoItem.Tid === todo.Tid);
+                      
+                              return todoCopy[todoIndex].Title;
+                            });
+                            setEditTodoTid(todo.Tid)
+                            setEditModal(!editModal);
+                          }}>✎</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.Textbutton} >
+                          <Text style={styles.TextbuttonText} onPress={() =>{ handleDeleteTodo(todo.Tid) }}>⌫</Text>
+                      </TouchableOpacity>
+                  </View>
+              </View>
+            <Text style={[styles.description , !todo.Done && styles.DoneBG]}>{todo.Description}</Text>
+          </View>
+        </View>)) 
+    :<View style={styles.emptyListContainer}>
+    <Image
+      source={require('./assets/EmptyListImage.jpeg')}
+      style={styles.emptyListImage}
+    />
+    <Text style={styles.emptyListText}>
+      Add Todos to see here
+    </Text>
+  </View>
+    }
+    </ScrollView>
 
       <TouchableOpacity
         style={styles.addButton}
@@ -89,6 +170,30 @@ const ItemList = ({ route }) => {
 
         </View>
       </Modal>
+
+
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={editModal}
+        onRequestClose={() => {
+          setEditModal(!editModal);
+          setEditTodoTid(null);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Title"
+            value={editText}
+            onChangeText={(text) => setEditText(text)}
+          />
+          <View style={styles.buttonRow}>
+            <Button title="Save Changes" onPress={() => {editTodoHandler(editTodoTid)}} />
+          </View>
+
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -97,7 +202,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  todoContainer: {
+  todoDoneContainer:{
+    backgroundColor: '#55aa88',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  todoNotDoneContainer: {
+    backgroundColor: 'hsl(0, 90%, 37%);', 
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
@@ -145,6 +257,84 @@ const styles = StyleSheet.create({
   },
   buttonSpacer: {
     width: 10, // Adjust the width as needed for spacing
+  },
+  checkboxContainer: {
+    position: 'absolute',
+    right: 10, // Adjust the value as needed
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxText: {
+    padding: 5, // Add padding as needed
+    fontSize: 18, // Adjust the font size as needed
+  },
+  todoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+
+  checkboxContainer: {
+    marginRight: 16,
+  },
+
+  todoDetailsContainer: {
+    flex: 1,
+  },
+
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+
+  description: {
+    fontSize: 16,
+    color: '#888',
+  },
+  Textcontainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between', 
+    padding: 4,
+  },
+  TextbuttonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+   
+  },
+  Textbutton: {
+    backgroundColor: '#009688',
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    marginRight: 4,
+  },
+  TextbuttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  emptyListContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop :  '30%'
+  },
+  emptyListImage: {
+    width: 250, // Adjust the width as needed
+    height: 300, // Adjust the height as needed
+    resizeMode: 'contain', // Adjust the resizeMode as needed
+  },
+  emptyListText: {
+    padding: 16, // Adjust the padding as needed
+    fontSize: 24, // Adjust the font size as needed
+    textAlign: 'center', // Center the text within its container
+    color: '#123', // Adjust the text color as needed
+  },
+  DoneBG : {
+    backgroundColor : '#e9e9d9',
+    color : 'black'
   },
 });
 

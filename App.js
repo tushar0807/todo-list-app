@@ -6,12 +6,6 @@ import { closeDatabase, deleteTables, getAllCategories, initDatabase } from './D
 
 const App = () => {
 
-  useEffect(()=>{
-    // initDatabase();
-
-    
-},[])
-
   return (
     <NavigationContainer>
       <CategoryListComponent />
