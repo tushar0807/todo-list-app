@@ -5,7 +5,7 @@ let db = SQLite.openDatabase('mydatabase.db');
 
 db.transaction((tx) => {
   tx.executeSql(
-    'SELECT name FROM sqlite_master WHERE type="table" AND name="category_list"',
+    'SELECT name FROM sqlite_master WHERE type="table" AND name="CategoryList"',
     [],
     (_, result) => {
       if (result.rows.length === 0) {
