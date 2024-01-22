@@ -107,13 +107,13 @@ const closeDatabase = () => {
   db._db.close();
 };
 
-const getAllCategories = (callback) => {
+const getAllCategories = (callback,search="") => {
     console.log("CAT CALLED")
 
   db.transaction(
     (tx) => {
       tx.executeSql(
-        'SELECT * FROM CategoryList',
+        `SELECT * FROM CategoryList where Title like '%${search}%'`,
         [],
         (_, { rows }) => {
           const categories = rows._array;
@@ -131,12 +131,12 @@ const getAllCategories = (callback) => {
   );
 };
 
-const getTodosByCategoryId = (categoryId) => {
+const getTodosByCategoryId = (categoryId, Search="") => {
     return new Promise((resolve, reject) => {
       db.transaction(
         (tx) => {
           tx.executeSql(
-            'SELECT * FROM TodoList WHERE Cid = ?',
+            `SELECT * FROM TodoList WHERE Cid = ? and title like '%${Search}%'`,
             [categoryId],
             (_, results) => {
               const todos = results.rows._array;

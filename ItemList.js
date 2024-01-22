@@ -8,6 +8,7 @@ import { addTodo, deleteTodo, getTodosByCategoryId, toggleTodoDoneStatus, update
 
 const ItemList = ({ route }) => {
   const { category } = route.params;
+  const [newsearch,setnewsearch]=useState({search: ""})
 
   const [todos, setTodos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -15,19 +16,21 @@ const ItemList = ({ route }) => {
   const [newTodo , setNewTodo] = useState({})
   const [editText , setEditText] = useState("")
   const [editTodoTid , setEditTodoTid] = useState(null)
+  
   useEffect(() => {
-    const fetchTodos = async () => {
-      try {
-        const result = await getTodosByCategoryId(category.Cid);
-        console.log(result)
-        setTodos(result);
-      } catch (error) {
-        console.error('Error fetching todos:', error);
-      }
-    };
+    
 
     fetchTodos();
-  }, [category.Cid ]);
+  }, [category.Cid]);
+  const fetchTodos = async () => {
+    try {
+      const result = await getTodosByCategoryId(category.Cid,newsearch.search);
+      console.log(result)
+      setTodos(result);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    }
+  };
 
   const addTodoHandler = async() => {
     try {
@@ -86,6 +89,10 @@ const ItemList = ({ route }) => {
 
   return (
     <View style={styles.container}>
+      <TextInput placeholder='search' value={newsearch.search} onChangeText={(text)=> setnewsearch({...newsearch,search:text})}/>
+      <Button title='Search' onPress={()=>{
+        fetchTodos();
+      }}/>
       <ScrollView>
       {todos && todos.length > 0 ? todos.map((todo, index) => (
         <View key={String(todo.Tid)} style={[styles.todoContainer , !todo.Done && styles.DoneBG]}>
@@ -106,12 +113,14 @@ const ItemList = ({ route }) => {
                   <View style={styles.TextbuttonsContainer}>
                       <TouchableOpacity style={styles.Textbutton}  >
                           <Text style={styles.TextbuttonText} onPress={() => {
-                            setEditText((prevText) => {
+
+                            setEditText(() => {
                               const todoCopy = [...todos];
                               const todoIndex = todoCopy.findIndex((todoItem) => todoItem.Tid === todo.Tid);
                       
                               return todoCopy[todoIndex].Title;
                             });
+
                             setEditTodoTid(todo.Tid)
                             setEditModal(!editModal);
                           }}>✎</Text>
