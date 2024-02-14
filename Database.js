@@ -107,13 +107,13 @@ const closeDatabase = () => {
   db._db.close();
 };
 
-const getAllCategories = (callback,search="") => {
+const getAllCategories = (callback) => {
     console.log("CAT CALLED")
 
   db.transaction(
     (tx) => {
       tx.executeSql(
-        `SELECT * FROM CategoryList where Title like '%${search}%'`,
+        `SELECT * FROM CategoryList`,
         [],
         (_, { rows }) => {
           const categories = rows._array;

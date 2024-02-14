@@ -21,24 +21,16 @@ const CategoryListComponent = () => {
   const navigation = useNavigation();
 
   const [category, setCategory] = useState([]);
+  const [newCategory, setNewCategory] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    fetchcategory();
+    getAllCategories((categories) => {
+      setCategory(categories);
+    });
   }, []);
 
-  const fetchcategory = async () => {
-    try {
-      const result = await getAllCategories(
-        (categories = () => {
-          setCategory(categories);
-        }),
-        newsearch.search
-      );
-      setnewsearch(result);
-    } catch (error) {
-      console.log("error fetching", error);
-    }
-  };
+  
 
   const handleCategoryPress = (category) => {
     navigation.navigate("ItemList", { category });
@@ -56,9 +48,7 @@ const CategoryListComponent = () => {
     }
   };
 
-  const [newsearch, setnewsearch] = useState({ search: "" });
-  const [newCategory, setNewCategory] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
+ 
 
   const handleCategoryAdd = async () => {
     try {
@@ -82,14 +72,6 @@ const CategoryListComponent = () => {
           <View style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={styles.scrollViewContainer}>
               <Text style={styles.h1}>Your Categories:</Text>
-              <TextInput
-                placeholder="search"
-                value={newsearch.search}
-                onChangeText={(text) =>
-                  setnewsearch({ ...newsearch, search: text })
-                }
-              />
-              <Button title="search" onPress={() => getAllCategories()} />
               {category.map((category, index) => (
                 <TouchableOpacity
                   style={styles.categoryCard}

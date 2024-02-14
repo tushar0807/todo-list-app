@@ -89,7 +89,7 @@ const ItemList = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <TextInput placeholder='search' value={newsearch.search} onChangeText={(text)=> setnewsearch({...newsearch,search:text})}/>
+      <TextInput style={styles.searchInput} placeholder='Search' value={newsearch.search} onChangeText={(text)=> setnewsearch({...newsearch,search:text})}/>
       <Button title='Search' onPress={()=>{
         fetchTodos();
       }}/>
@@ -344,6 +344,10 @@ const styles = StyleSheet.create({
   DoneBG : {
     backgroundColor : '#e9e9d9',
     color : 'black'
+  },
+  searchInput :{
+    padding: 5,
+    textAlign: 'center',
   },
 });
 
